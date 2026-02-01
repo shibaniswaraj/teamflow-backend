@@ -1,5 +1,7 @@
 package com.teamflow.teamflow.service;
 
+import com.teamflow.teamflow.dto.UpdateUserRequest;
+import com.teamflow.teamflow.dto.UserDetailResponse;
 import com.teamflow.teamflow.dto.UserResponse;
 import com.teamflow.teamflow.dto.UserSummaryResponse;
 import com.teamflow.teamflow.model.Role;
@@ -185,5 +187,79 @@ public class UserService {
         user.setFirstLogin(false);
 
         userRepository.save(user);
+    }
+    // ===============================
+// GET USER BY ID (ADMIN)
+// ===============================
+    public UserDetailResponse getUserById(UUID userId, Authentication auth) {
+
+        User admin = userRepository.findByEmail(auth.getName())
+                .orElseThrow();
+
+        if (admin.getRole() != Role.ADMIN) {
+            throw new RuntimeException("Only ADMIN can view user details");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return new UserDetailResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole()
+        );
+    }
+
+    // ===============================
+// UPDATE USER (ADMIN)
+// ===============================
+    public UserDetailResponse updateUser(
+            UUID userId,
+            UpdateUserRequest request,
+            Authentication auth
+    ) {
+        User actingAdmin = userRepository.findByEmail(auth.getName())
+                .orElseThrow();
+
+        if (actingAdmin.getRole() != Role.ADMIN) {
+            throw new RuntimeException("Only ADMIN can update users");
+        }
+
+        User targetUser = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // 🚫 ADMIN CANNOT EDIT ANOTHER ADMIN
+        if (targetUser.getRole() == Role.ADMIN &&
+                !targetUser.getId().equals(actingAdmin.getId())) {
+            throw new RuntimeException("Admins cannot modify other admins");
+        }
+
+        // 🚫 ADMIN CANNOT DEMOTE SELF
+        if (targetUser.getId().equals(actingAdmin.getId())
+                && request.getRole() != Role.ADMIN) {
+            throw new RuntimeException("Admin cannot demote self");
+        }
+
+        // Email uniqueness check
+        userRepository.findByEmail(request.getEmail())
+                .ifPresent(existing -> {
+                    if (!existing.getId().equals(userId)) {
+                        throw new RuntimeException("Email already in use");
+                    }
+                });
+
+        targetUser.setName(request.getName());
+        targetUser.setEmail(request.getEmail());
+        targetUser.setRole(request.getRole());
+
+        User saved = userRepository.save(targetUser);
+
+        return new UserDetailResponse(
+                saved.getId(),
+                saved.getName(),
+                saved.getEmail(),
+                saved.getRole()
+        );
     }
 }
