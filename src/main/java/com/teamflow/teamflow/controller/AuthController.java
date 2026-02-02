@@ -1,12 +1,10 @@
 package com.teamflow.teamflow.controller;
 
+import com.teamflow.teamflow.dto.*;
 import com.teamflow.teamflow.model.Role;
 import com.teamflow.teamflow.model.User;
 import com.teamflow.teamflow.security.JwtUtil;
 import com.teamflow.teamflow.service.UserService;
-import com.teamflow.teamflow.dto.LoginRequest;
-import com.teamflow.teamflow.dto.CreateUserRequest;
-import com.teamflow.teamflow.dto.ChangePasswordRequest;
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpHeaders;
@@ -129,6 +127,32 @@ public class AuthController {
                         "email", auth.getName(),
                         "role", auth.getAuthorities().iterator().next().getAuthority()
                 )
+        );
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(
+            @RequestBody ForgotPasswordRequest request
+    ) {
+        userService.requestPasswordReset(request.getEmail());
+        return ResponseEntity.ok(Map.of("message", "Reset link sent"));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(
+            @RequestBody ResetPasswordRequest request
+    ) {
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new RuntimeException("Passwords do not match");
+        }
+
+        userService.resetPassword(
+                request.getToken(),
+                request.getNewPassword()
+        );
+
+        return ResponseEntity.ok(
+                Map.of("message", "Password reset successful")
         );
     }
 

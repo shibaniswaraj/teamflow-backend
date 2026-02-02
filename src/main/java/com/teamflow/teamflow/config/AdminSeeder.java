@@ -28,6 +28,7 @@ public class AdminSeeder implements CommandLineRunner {
             admin.setActive(true);
             admin.setFirstLogin(false);
             admin.setLoginCount(0);
+            admin.setName("admin");
 
             userRepository.save(admin);
 

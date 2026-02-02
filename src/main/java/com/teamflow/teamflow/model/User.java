@@ -1,62 +1,76 @@
 package com.teamflow.teamflow.model;
+
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Entity //marks this class as a jpa entity i.e., now it's a table
-@Table(name="users") //to give custom name="users", otherwise it would've been only user
+@Entity
+@Table(name = "users")
 public class User {
 
-    @Id //for primary key
-    @GeneratedValue //for auto generating values
+    @Id
+    @GeneratedValue
     private UUID id;
 
     @Column(nullable = false)
     private String name;
 
-
     @Column(nullable = false, unique = true)
     private String email;
-
 
     @Column(nullable = false)
     private String password;
 
-    @Enumerated(EnumType.STRING) //Stores enum values as strings
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
 
-    @ManyToOne  //multiple users can have same designation
-    @JoinColumn(name = "designation_id") //referencing foreign key from designation table, there the name of the column will still be id, only in users table the name of the column that store designation ids will be named as designation_id
-    private Designation designation; //we ar storing id not the text of designation
+    @ManyToOne
+    @JoinColumn(name = "designation_id")
+    private Designation designation;
 
     @Column(nullable = false)
-    private boolean firstLogin = true;   // forces password change
+    private boolean firstLogin = true;
 
     @Column(nullable = false)
-    private int loginCount = 0;          // track logins
+    private int loginCount = 0;
 
     @Column(nullable = false)
-    private boolean active = true;       // disable user if needed
+    private boolean active = true;
 
+    // 🔑 FORGOT PASSWORD
+    @Column(name = "reset_token")
+    private String resetToken;
 
-    // ---- Default Constructor (Required by Hibernate) ----
+    @Column(name = "reset_token_expiry")
+    private LocalDateTime resetTokenExpiry;
+
+    // ✅ NEW — for ordering users
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    @PreUpdate
+    public void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public User() {}
 
-    // ---- All-Args Constructor (optional helper for manual creation) ----
-    public User(String name,String email, String password, Role role, Designation designation) {
-        this.name=name;
+    public User(String name, String email, String password, Role role, Designation designation) {
+        this.name = name;
         this.email = email;
         this.password = password;
         this.role = role;
         this.designation = designation;
     }
 
-    // ---- Getters & Setters (Hibernate + Spring use these internally) ----
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
@@ -69,28 +83,24 @@ public class User {
     public Designation getDesignation() { return designation; }
     public void setDesignation(Designation designation) { this.designation = designation; }
 
-    public boolean isFirstLogin() {
-        return firstLogin;
+    public boolean isFirstLogin() { return firstLogin; }
+    public void setFirstLogin(boolean firstLogin) { this.firstLogin = firstLogin; }
+
+    public int getLoginCount() { return loginCount; }
+    public void setLoginCount(int loginCount) { this.loginCount = loginCount; }
+
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
+
+    public String getResetToken() { return resetToken; }
+    public void setResetToken(String resetToken) { this.resetToken = resetToken; }
+
+    public LocalDateTime getResetTokenExpiry() { return resetTokenExpiry; }
+    public void setResetTokenExpiry(LocalDateTime resetTokenExpiry) {
+        this.resetTokenExpiry = resetTokenExpiry;
     }
 
-    public void setFirstLogin(boolean firstLogin) {
-        this.firstLogin = firstLogin;
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
     }
-
-    public int getLoginCount() {
-        return loginCount;
-    }
-
-    public void setLoginCount(int loginCount) {
-        this.loginCount = loginCount;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
 }

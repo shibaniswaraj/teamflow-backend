@@ -6,6 +6,7 @@ import com.teamflow.teamflow.dto.ProjectCreateRequest;
 import com.teamflow.teamflow.dto.ProjectResponse;
 import com.teamflow.teamflow.dto.ProjectUpdateRequest;
 import com.teamflow.teamflow.service.ProjectService;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -69,7 +70,7 @@ public class ProjectController {
     @PutMapping("/{projectId}")
     public void updateProject(
             @PathVariable UUID projectId,
-            @RequestBody ProjectUpdateRequest request,
+            @Valid @RequestBody ProjectUpdateRequest request,
             Authentication auth
     ) {
         projectService.updateProject(projectId, request, auth);

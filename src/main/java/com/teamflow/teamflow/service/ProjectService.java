@@ -49,11 +49,8 @@ public class ProjectService {
             int size,
             Authentication authentication
     ) {
-        String email = authentication.getName();
-
-
         User currentUser = userRepository
-                .findByEmail(email)
+                .findByEmail(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Pageable pageable = PageRequest.of(page, size);
@@ -70,10 +67,23 @@ public class ProjectService {
                     .findByManagerOrderByUpdatedAtDesc(currentUser, pageable);
 
         } else {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Members cannot list projects"
-            );
+            // ✅ MEMBER: only assigned projects
+
+            List<UUID> projectIds = projectMemberRepository
+                    .findByUser(currentUser)
+                    .stream()
+                    .map(pm -> pm.getProject().getId())
+                    .toList();
+
+            if (projectIds.isEmpty()) {
+                return Page.empty(pageable);
+            }
+
+            projectPage = projectRepository
+                    .findDistinctByIdInOrderByUpdatedAtDesc(
+                            projectIds,
+                            pageable
+                    );
         }
 
         return projectPage.map(project -> {
@@ -93,6 +103,7 @@ public class ProjectService {
             );
         });
     }
+
 
     // ===============================
     // GET PROJECT BY ID
@@ -231,6 +242,11 @@ public class ProjectService {
 
             project.setManager(newManager);
         }
+
+        if (currentUser.getRole() == Role.ADMIN && request.getManagerId() == null) {
+            throw new RuntimeException("Project manager is required");
+        }
+
 
         if (currentUser.getRole() == Role.MANAGER) {
 

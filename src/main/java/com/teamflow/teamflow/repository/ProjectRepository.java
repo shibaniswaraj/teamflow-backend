@@ -18,6 +18,11 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
             Pageable pageable
     );
 
+    Page<Project> findDistinctByIdInOrderByUpdatedAtDesc(
+            List<UUID> projectIds,
+            Pageable pageable
+    );
+
 
 
 

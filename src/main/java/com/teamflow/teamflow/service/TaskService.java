@@ -58,7 +58,12 @@ public class TaskService {
                     .findById(request.getAssignedUserId())
                     .orElseThrow();
             task.setAssignedUser(assignee);
-            task.setStatus(request.getStatus());
+            task.setStatus(
+                    request.getStatus() != null
+                            ? request.getStatus()
+                            : TaskStatus.TODO
+            );
+
         }
 
         return map(taskRepository.save(task));
@@ -67,6 +72,7 @@ public class TaskService {
     // ===============================
     // UPDATE TASK (EDIT)
     // ===============================
+    // ✅ UPDATE TASK (EDIT)
     public TaskResponse updateTask(
             UUID taskId,
             TaskUpdateRequest request,
@@ -92,12 +98,18 @@ public class TaskService {
         }
 
         if (request.getAssignedUserId() == null) {
-            task.setAssignedUser(null); // backlog
+            task.setAssignedUser(null);
+            task.setStatus(TaskStatus.TODO); // optional reset
         } else {
             User assignee = userRepository
                     .findById(request.getAssignedUserId())
                     .orElseThrow();
             task.setAssignedUser(assignee);
+
+            // ✅ THIS IS THE MISSING LINE
+            if (request.getStatus() != null) {
+                task.setStatus(request.getStatus());
+            }
         }
 
         return map(taskRepository.save(task));
@@ -157,4 +169,5 @@ public class TaskService {
                         : null
         );
     }
+
 }
